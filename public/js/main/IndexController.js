@@ -12,7 +12,16 @@ export default function IndexController(container) {
 }
 
 IndexController.prototype._registerServiceWorker = function() {
-  // TODO: register service worker
+  if(!navigator.serviceWorker) {
+    console.log('serviceWorker not supported!');
+  }
+
+  navigator.serviceWorker.register('/sw.js').then(function() {
+    console.log('Registration worked!');
+  }).catch(function(errorInfo){
+    console.log('Registration failed');
+    console.log(errorInfo);
+  });
 };
 
 // open a connection to the server for live updates
@@ -22,7 +31,7 @@ IndexController.prototype._openSocket = function() {
 
   // create a url pointing to /updates with the ws protocol
   var socketUrl = new URL('/updates', window.location);
-  socketUrl.protocol = 'ws';
+  socketUrl.protocol = 'wss';
 
   if (latestPostDate) {
     socketUrl.search = 'since=' + latestPostDate.valueOf();
