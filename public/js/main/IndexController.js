@@ -36,15 +36,23 @@ IndexController.prototype._registerServiceWorker = function() {
     });
   });
 
-  // TODO: listen for the controlling service worker changing
-  // and reload the page
+  navigator.serviceWorker.addEventListener('controllerchange', function() {
+    window.location.reload();
+  });
 };
 
 IndexController.prototype._trackInstalling = function(worker) {
   var indexController = this;
   worker.addEventListener('statechange', function() {
+    if (worker.state =='installing') {
+      console.log('Installing...');
+    }
     if (worker.state == 'installed') {
       indexController._updateReady(worker);
+    }
+    
+    if (worker.state == 'redundant') {
+      console.log('Problem?');
     }
   });
 };
@@ -56,7 +64,7 @@ IndexController.prototype._updateReady = function(worker) {
 
   toast.answer.then(function(answer) {
     if (answer != 'refresh') return;
-    // TODO: tell the service worker to skipWaiting
+    worker.postMessage({ action: 'skipWaiting' });
   });
 };
 
@@ -67,7 +75,7 @@ IndexController.prototype._openSocket = function() {
 
   // create a url pointing to /updates with the ws protocol
   var socketUrl = new URL('/updates', window.location);
-  socketUrl.protocol = 'ws';
+  socketUrl.protocol = 'wss';
 
   if (latestPostDate) {
     socketUrl.search = 'since=' + latestPostDate.valueOf();
