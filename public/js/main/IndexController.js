@@ -16,7 +16,8 @@ IndexController.prototype._registerServiceWorker = function() {
 
   navigator.serviceWorker.register('/sw.js').then(function() {
     console.log('Registration worked!');
-  }).catch(function() {
+  }).catch(function(errorInfo) {
+    console.log(errorInfo);
     console.log('Registration failed!');
   });
 };
@@ -28,7 +29,7 @@ IndexController.prototype._openSocket = function() {
 
   // create a url pointing to /updates with the ws protocol
   var socketUrl = new URL('/updates', window.location);
-  socketUrl.protocol = 'ws';
+  socketUrl.protocol = 'wss';
 
   if (latestPostDate) {
     socketUrl.search = 'since=' + latestPostDate.valueOf();
