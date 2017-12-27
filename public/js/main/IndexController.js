@@ -20,18 +20,41 @@ IndexController.prototype._registerServiceWorker = function() {
     // TODO: if there's no controller, this page wasn't loaded
     // via a service worker, so they're looking at the latest version.
     // In that case, exit early
-
-    // TODO: if there's an updated worker already waiting, call
-    // indexController._updateReady()
-
+    if (!navigator.serviceWorker.controller) {
+      return;
+    }
+    // TODO: if there's an updated worker already waiting
+    if (reg.waiting) {
+      indexController._updateReady();
+      return;
+    }
     // TODO: if there's an updated worker installing, track its
     // progress. If it becomes "installed", call
-    // indexController._updateReady()
+    if (reg.installing) {
+      indexController._trackInstalling(reg);
+    }
+    reg.addEventListener('updatefound', function() {
+      indexController._trackInstalling(reg);
+    });
 
     // TODO: otherwise, listen for new installing workers arriving.
     // If one arrives, track its progress.
     // If it becomes "installed", call
     // indexController._updateReady()
+  });
+};
+
+IndexController.prototype._trackInstalling = function(reg) {
+  var indexController = this;
+
+  reg.installing.addEventListener('statechange', function() {
+    if (this.state == 'installed') {
+      indexController._updateReady();
+      return;
+    }
+    if (this.state == 'redundant') {
+      console.log('Problem?');
+    }
   });
 };
 
@@ -48,7 +71,7 @@ IndexController.prototype._openSocket = function() {
 
   // create a url pointing to /updates with the ws protocol
   var socketUrl = new URL('/updates', window.location);
-  socketUrl.protocol = 'ws';
+  socketUrl.protocol = 'wss';
 
   if (latestPostDate) {
     socketUrl.search = 'since=' + latestPostDate.valueOf();
