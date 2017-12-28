@@ -51,6 +51,11 @@ ports:
   - 8001:8889
 ```
 
+## Running using Cloud9
+```sh
+npm run serve -- --server-port=8080 --config-server-port=8081
+```
+
 ## Troubleshooting
 
 * Errors while executing `npm run serve`.
