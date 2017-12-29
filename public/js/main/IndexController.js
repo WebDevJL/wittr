@@ -14,6 +14,14 @@ function openDatabase() {
   // that uses 'id' as its key
   // and has an index called 'by-date', which is sorted
   // by the 'time' property
+  var dbPromise = idb.open('wittr', 1, function(upgradeDb) {
+    //switch (upgradeDb.oldVersion) {
+    //  case 0:
+    var wittrStore = upgradeDb.createObjectStore('wittrs', { keyPath: 'id' });
+    wittrStore.createIndex('by-date', 'time');
+    //}
+  });
+  return dbPromise;
 }
 
 export default function IndexController(container) {
@@ -77,7 +85,7 @@ IndexController.prototype._updateReady = function(worker) {
 
   toast.answer.then(function(answer) {
     if (answer != 'refresh') return;
-    worker.postMessage({action: 'skipWaiting'});
+    worker.postMessage({ action: 'skipWaiting' });
   });
 };
 
@@ -88,7 +96,7 @@ IndexController.prototype._openSocket = function() {
 
   // create a url pointing to /updates with the ws protocol
   var socketUrl = new URL('/updates', window.location);
-  socketUrl.protocol = 'ws';
+  socketUrl.protocol = 'wss';
 
   if (latestPostDate) {
     socketUrl.search = 'since=' + latestPostDate.valueOf();
@@ -129,12 +137,19 @@ IndexController.prototype._openSocket = function() {
 // called when the web socket sends message data
 IndexController.prototype._onSocketMessage = function(data) {
   var messages = JSON.parse(data);
-
+  console.log(messages);
   this._dbPromise.then(function(db) {
     if (!db) return;
 
-    // TODO: put each message into the 'wittrs'
+
+    // TOD put each message into the 'wittrs'
     // object store.
+    var tx = db.transaction('wittrs', 'readwrite');
+    var wittrStore = tx.objectStore('wittrs');
+    messages.forEach(function(message) {
+      wittrStore.put(message);
+    });
+
   });
 
   this._postsView.addPosts(messages);
