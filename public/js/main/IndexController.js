@@ -82,6 +82,12 @@ IndexController.prototype._showCachedMessages = function() {
     // in order of date, starting with the latest.
     // Remember to return a promise that does all this,
     // so the websocket isn't opened until you're done!
+    var index = db.transaction('wittrs')
+      .objectStore('wittrs').index('by-date');
+      
+    return index.getAll().then(function(messages) {
+      indexController._postsView.addPosts(messages.reverse());
+    });
   });
 };
 
@@ -112,7 +118,7 @@ IndexController.prototype._openSocket = function() {
 
   // create a url pointing to /updates with the ws protocol
   var socketUrl = new URL('/updates', window.location);
-  socketUrl.protocol = 'ws';
+  socketUrl.protocol = 'wss';
 
   if (latestPostDate) {
     socketUrl.search = 'since=' + latestPostDate.valueOf();
