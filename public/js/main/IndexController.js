@@ -28,9 +28,11 @@ export default function IndexController(container) {
 
   var indexController = this;
 
+  var cleanImageCacheIntervalInMs = 5; //5 min 
   setInterval(function() {
+
     indexController._cleanImageCache();
-  }, 1000 * 60 * 5);
+  }, cleanImageCacheIntervalInMs);
 
   this._showCachedMessages().then(function() {
     indexController._openSocket();
@@ -106,7 +108,7 @@ IndexController.prototype._updateReady = function(worker) {
 
   toast.answer.then(function(answer) {
     if (answer != 'refresh') return;
-    worker.postMessage({action: 'skipWaiting'});
+    worker.postMessage({ action: 'skipWaiting' });
   });
 };
 
@@ -117,7 +119,7 @@ IndexController.prototype._openSocket = function() {
 
   // create a url pointing to /updates with the ws protocol
   var socketUrl = new URL('/updates', window.location);
-  socketUrl.protocol = 'ws';
+  socketUrl.protocol = 'wss';
 
   if (latestPostDate) {
     socketUrl.search = 'since=' + latestPostDate.valueOf();
@@ -159,11 +161,27 @@ IndexController.prototype._cleanImageCache = function() {
   return this._dbPromise.then(function(db) {
     if (!db) return;
 
-    // TODO: open the 'wittr' object store, get all the messages,
-    // gather all the photo urls.
-    //
-    // Open the 'wittr-content-imgs' cache, and delete any entry
-    // that you no longer need.
+    var imagesNeeded = [];
+
+    var tx = db.transaction('wittrs');
+    return tx.objectStore('wittrs').getAll().then(function(messages) {
+      messages.forEach(function(message) {
+        if (message.photo) {
+          imagesNeeded.push(message.photo);
+        }
+      });
+
+      return caches.open('wittr-content-imgs');
+    }).then(function(cache) {
+      return cache.keys().then(function(requests) { //https://developer.mozilla.org/fr/docs/Web/API/Cache/keys
+        requests.forEach(function(request) {
+          var url = new URL(request.url);
+          if (!imagesNeeded.includes(url.pathname)) {
+            cache.delete(request);
+          }
+        })
+      })
+    });
   });
 };
 
