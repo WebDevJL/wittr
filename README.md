@@ -5,7 +5,7 @@ This is a silly little demo app for an offline-first course.
 You could run the app either using machine dependnecies, or using docker
 
 ## Running using Cloud9 workspace
-Checkout the wiki: https://github.com/JeremieLitzler/wittr/wiki/Get-the-project-running!
+Checkout the (wiki)[https://github.com/JeremieLitzler/wittr/wiki/Get-the-project-running!]!
 
 ## Running using local machine
 
